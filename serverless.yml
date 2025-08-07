@@ -94,6 +94,8 @@ functions:
 
   attendance:
     handler: attendance.handler
+    memorySize: 256
+    timeout: 10
     events:
       - http:
           path: /attendance
@@ -189,3 +191,4 @@ custom:
     strip: false
     useDownloadCache: true
     useStaticCache: true
+
