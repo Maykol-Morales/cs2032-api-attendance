@@ -1,0 +1,43 @@
+# Entornos virtuales
+.venv/
+env/
+venv/
+__pycache__/
+
+# Archivos Python compilados
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+*.pyo
+*.pyd
+*.py.class
+
+# Archivos generados por Serverless Framework
+.serverless/
+
+# Dependencias Node
+node_modules/
+
+# Archivos de lock (opcional: si usas package-lock como control, no lo ignores)
+package-lock.json
+
+# Archivos de entorno
+.env
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Cache de pip
+pip-wheel-metadata/
+*.egg-info/
+dist/
+build/
+
+# Archivos de logs
+*.log
+
+# VSCode u otros editores
+.vscode/
+.idea/

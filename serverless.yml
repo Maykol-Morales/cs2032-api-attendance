@@ -1,0 +1,191 @@
+service: UTECAttendance
+
+provider:
+  name: aws
+  runtime: python3.13
+  stage: prod
+  region: us-east-1
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:DeleteItem
+            - dynamodb:Scan
+            - dynamodb:Query
+            - dynamodb:UpdateItem
+          Resource: "*"
+
+functions:
+  instructor:
+    handler: instructor.handler
+    events:
+      - http:
+          path: /instructor
+          method: ANY
+          cors:
+            origin: https://admin.cs2032.com
+            headers:
+              - Content-Type
+            allowCredentials: false
+          private: true
+      - http:
+          path: /instructor/{proxy+}
+          method: ANY
+          cors:
+            origin: https://admin.cs2032.com
+            headers:
+              - Content-Type
+            allowCredentials: false
+          private: true
+    environment:
+      INSTRUCTORS_TABLE_NAME: instructors
+
+  course:
+    handler: course.handler
+    events:
+      - http:
+          path: /course
+          method: ANY
+          cors:
+            origin: https://admin.cs2032.com
+            headers:
+              - Content-Type
+            allowCredentials: false
+          private: true
+      - http:
+          path: /course/{proxy+}
+          method: ANY
+          cors:
+            origin: https://admin.cs2032.com
+            headers:
+              - Content-Type
+            allowCredentials: false
+          private: true
+    environment:
+      COURSES_TABLE_NAME: courses
+
+  session:
+    handler: session.handler
+    events:
+      - http:
+          path: /session
+          method: ANY
+          cors:
+            origin: https://admin.cs2032.com
+            headers:
+              - Content-Type
+            allowCredentials: false
+          private: true
+      - http:
+          path: /session/{proxy+}
+          method: ANY
+          cors:
+            origin: https://admin.cs2032.com
+            headers:
+              - Content-Type
+            allowCredentials: false
+          private: true
+    environment:
+      SESSIONS_TABLE_NAME: sessions
+      FRONT_END_URL: https://admin.cs2032.com
+
+  attendance:
+    handler: attendance.handler
+    events:
+      - http:
+          path: /attendance
+          method: ANY
+          cors:
+            origin: https://attendance.cs2032.com
+            headers:
+              - Content-Type
+            allowCredentials: false
+          private: true
+    environment:
+      SESSIONS_TABLE_NAME: sessions
+
+resources:
+  Resources:
+    InstructorsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: instructors
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: email
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    CoursesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: courses
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    SessionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: sessions
+        AttributeDefinitions:
+          - AttributeName: course_id
+            AttributeType: S
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: course_id
+            KeyType: HASH
+          - AttributeName: id
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+
+    MyApiKey:
+      Type: AWS::ApiGateway::ApiKey
+      Properties:
+        Name: SecretKey
+        Enabled: true
+
+    MyUsagePlan:
+      Type: AWS::ApiGateway::UsagePlan
+      Properties:
+        UsagePlanName: PlanBasico
+        ApiStages:
+          - ApiId:
+              Ref: ApiGatewayRestApi
+            Stage: ${sls:stage}
+        Throttle:
+          RateLimit: 5
+          BurstLimit: 10
+        Quota:
+          Limit: 500
+          Period: MONTH
+
+    MyUsagePlanKey:
+      Type: AWS::ApiGateway::UsagePlanKey
+      Properties:
+        KeyId:
+          Ref: MyApiKey
+        KeyType: API_KEY
+        UsagePlanId:
+          Ref: MyUsagePlan
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+    slim: true
+    strip: false
+    useDownloadCache: true
+    useStaticCache: true
