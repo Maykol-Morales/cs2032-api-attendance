@@ -90,7 +90,7 @@ functions:
           private: true
     environment:
       SESSIONS_TABLE_NAME: sessions
-      FRONT_END_URL: https://admin.cs2032.com
+      FRONT_END_URL: https://attendance.cs2032.com
 
   attendance:
     handler: attendance.handler
@@ -191,4 +191,5 @@ custom:
     strip: false
     useDownloadCache: true
     useStaticCache: true
+
 
