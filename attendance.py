@@ -37,7 +37,7 @@ def make_response(status_code: int, content: dict):
         "statusCode": status_code,
         "headers": {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "https://admin.cs2032.com",
+            "Access-Control-Allow-Origin": "https://attendance.cs2032.com",
             "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type,x-api-key"
         },
@@ -105,3 +105,4 @@ def handler(event, context):
 
     except Exception as e:
         return make_response(500, {"error": str(e)})
+
