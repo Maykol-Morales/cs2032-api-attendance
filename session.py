@@ -23,13 +23,16 @@ SESSIONS_TABLE = dynamodb.Table(os.environ["SESSIONS_TABLE_NAME"])
 FRONT_END_URL = os.environ.get("FRONT_END_URL")
 
 # Función para respuesta estándar
-def make_response(status_code, content):
+def make_response(status_code: int, content: dict):
     return {
         "statusCode": status_code,
         "headers": {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "https://admin.cs2032.com",
+            "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type,x-api-key"
         },
-        "body": json.dumps(content, cls=DecimalEncoder)
+        "body": json.dumps(content)
     }
 
 # Función para generar QR en base64
@@ -72,6 +75,7 @@ def handler(event, context):
             body["id"] = session_id
             qr_url = f"{FRONT_END_URL}?course={course_id}&session={session_id}"
             body["qr_code"] = generate_qr_code(qr_url)
+            body["attendees"] = []
 
             SESSIONS_TABLE.put_item(Item=body)
             return make_response(200, parse_session(body))

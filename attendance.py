@@ -32,11 +32,16 @@ def is_expired(expire_at: datetime) -> bool:
     return now >= expire_at_utc
 
 # 🔵 Respuesta JSON
-def make_response(status_code, content):
+def make_response(status_code: int, content: dict):
     return {
         "statusCode": status_code,
-        "headers": {"Content-Type": "application/json"},
-        "body": json.dumps(content, cls=DecimalEncoder)
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "https://admin.cs2032.com",
+            "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type,x-api-key"
+        },
+        "body": json.dumps(content)
     }
 
 # 🔵 Parse de input

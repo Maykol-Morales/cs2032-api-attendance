@@ -38,6 +38,7 @@ functions:
             origin: https://admin.cs2032.com
             headers:
               - Content-Type
+              - x-api-key
             allowCredentials: false
           private: true
     environment:
@@ -53,6 +54,7 @@ functions:
             origin: https://admin.cs2032.com
             headers:
               - Content-Type
+              - x-api-key
             allowCredentials: false
           private: true
       - http:
@@ -62,6 +64,7 @@ functions:
             origin: https://admin.cs2032.com
             headers:
               - Content-Type
+              - x-api-key
             allowCredentials: false
           private: true
     environment:
@@ -77,6 +80,7 @@ functions:
             origin: https://admin.cs2032.com
             headers:
               - Content-Type
+              - x-api-key
             allowCredentials: false
           private: true
       - http:
@@ -86,6 +90,7 @@ functions:
             origin: https://admin.cs2032.com
             headers:
               - Content-Type
+              - x-api-key
             allowCredentials: false
           private: true
     environment:
@@ -94,8 +99,6 @@ functions:
 
   attendance:
     handler: attendance.handler
-    memorySize: 256
-    timeout: 10
     events:
       - http:
           path: /attendance
@@ -104,6 +107,7 @@ functions:
             origin: https://attendance.cs2032.com
             headers:
               - Content-Type
+              - x-api-key
             allowCredentials: false
           private: true
     environment:
@@ -191,5 +195,3 @@ custom:
     strip: false
     useDownloadCache: true
     useStaticCache: true
-
-

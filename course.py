@@ -20,13 +20,16 @@ COURSES_TABLE = dynamodb.Table(os.environ["COURSES_TABLE_NAME"])
 
 
 # Función para respuesta estándar
-def make_response(status_code, content):
+def make_response(status_code: int, content: dict):
     return {
         "statusCode": status_code,
         "headers": {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "https://admin.cs2032.com",
+            "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type,x-api-key"
         },
-        "body": json.dumps(content, cls=DecimalEncoder)
+        "body": json.dumps(content)
     }
 
 # Normalizar curso
