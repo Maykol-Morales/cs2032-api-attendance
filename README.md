@@ -19,7 +19,7 @@ attendance.cs2032 ─┘   (API key + plan)    ├─ λ session ────┤
 ```
 
 - **AWS Lambda** (Python 3.13): una función por recurso
-- **API Gateway**: todos los endpoints son privados (header `x-api-key`), con usage plan (5 req/s, ráfaga de 10, 500 req/mes)
+- **API Gateway**: todos los endpoints son privados (header `x-api-key`), con usage plan (20 req/s, ráfaga de 100, 20 000 req/mes)
 - **DynamoDB** (on-demand): tablas `instructors`, `courses` y `sessions`
 - **Serverless Framework** + `serverless-python-requirements`
 - `qrcode` + `pillow` para el QR · `haversine` para validar la distancia al campus
@@ -67,7 +67,13 @@ sls remove           # elimina todos los recursos
 
 La URL base y la API key son las que usan los frontends en `PUBLIC_BACK_END_URL` y `PUBLIC_BACK_END_KEY`.
 
-Los orígenes CORS (`admin.cs2032.com` y `attendance.cs2032.com`) y la URL del QR (`FRONT_END_URL`) se configuran en `serverless.yml` y en `make_response` de cada handler.
+Todo se configura en `serverless.yml`:
+
+| Variable | Función | Descripción |
+|---|---|---|
+| `ALLOWED_ORIGIN` | todas | Origen CORS permitido (`admin.cs2032.com` o `attendance.cs2032.com`) |
+| `FRONT_END_URL` | session | URL a la que apunta el QR |
+| `*_TABLE_NAME` | todas | Nombre de la tabla DynamoDB |
 
 ## Estructura
 

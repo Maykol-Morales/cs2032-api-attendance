@@ -7,6 +7,7 @@ from boto3.dynamodb.conditions import Key
 # Inicializa DynamoDB y la tabla
 dynamodb = boto3.resource("dynamodb")
 INSTRUCTORS_TABLE = dynamodb.Table(os.environ["INSTRUCTORS_TABLE_NAME"])
+ALLOWED_ORIGIN = os.environ["ALLOWED_ORIGIN"]
 
 
 # Función para responder con formato API Gateway
@@ -15,7 +16,7 @@ def make_response(status_code: int, content: dict):
         "statusCode": status_code,
         "headers": {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "https://admin.cs2032.com",
+            "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
             "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type,x-api-key"
         },

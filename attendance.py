@@ -1,6 +1,7 @@
 import json
 import os
 import boto3
+from botocore.exceptions import ClientError
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -9,6 +10,7 @@ from haversine import Unit, haversine
 # DynamoDB
 dynamodb = boto3.resource("dynamodb")
 SESSIONS_TABLE = dynamodb.Table(os.environ["SESSIONS_TABLE_NAME"])
+ALLOWED_ORIGIN = os.environ["ALLOWED_ORIGIN"]
 
 # JSON encoder para Decimal
 class DecimalEncoder(json.JSONEncoder):
@@ -37,11 +39,11 @@ def make_response(status_code: int, content: dict):
         "statusCode": status_code,
         "headers": {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "https://attendance.cs2032.com",
+            "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
             "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type,x-api-key"
         },
-        "body": json.dumps(content)
+        "body": json.dumps(content, cls=DecimalEncoder)
     }
 
 # 🔵 Parse de input
@@ -60,7 +62,7 @@ def handler(event, context):
     path = event["path"]
 
     try:
-        if method == "POST" and "/attendance":
+        if method == "POST" and path == "/attendance":
             body = json.loads(event["body"])
             data = parse_attendance(body)
 
@@ -89,15 +91,23 @@ def handler(event, context):
                 ):
                     return make_response(404, "Invalid Location")
 
-            # Agregar estudiante
-            attendees = session.get("attendees", [])
-            attendees.append(data["student_email"])
-
-            SESSIONS_TABLE.update_item(
-                Key={"course_id": data["course_id"], "id": data["session_id"]},
-                UpdateExpression="SET attendees = :new_attendees",
-                ExpressionAttributeValues={":new_attendees": attendees}
-            )
+            # Agregar estudiante de forma atómica: la condición evita duplicados
+            # y que dos registros simultáneos se sobrescriban
+            try:
+                SESSIONS_TABLE.update_item(
+                    Key={"course_id": data["course_id"], "id": data["session_id"]},
+                    UpdateExpression="SET attendees = list_append(if_not_exists(attendees, :empty), :student)",
+                    ConditionExpression="attribute_not_exists(attendees) OR NOT contains(attendees, :email)",
+                    ExpressionAttributeValues={
+                        ":empty": [],
+                        ":student": [data["student_email"]],
+                        ":email": data["student_email"]
+                    }
+                )
+            except ClientError as e:
+                if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                    return make_response(402, "Already Marked")
+                raise
 
             return make_response(200, "Attendance Marked")
 

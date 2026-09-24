@@ -17,6 +17,7 @@ class DecimalEncoder(json.JSONEncoder):
 # Inicializar recurso DynamoDB y tabla
 dynamodb = boto3.resource("dynamodb")
 COURSES_TABLE = dynamodb.Table(os.environ["COURSES_TABLE_NAME"])
+ALLOWED_ORIGIN = os.environ["ALLOWED_ORIGIN"]
 
 
 # Función para respuesta estándar
@@ -25,11 +26,11 @@ def make_response(status_code: int, content: dict):
         "statusCode": status_code,
         "headers": {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "https://admin.cs2032.com",
+            "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
             "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type,x-api-key"
         },
-        "body": json.dumps(content)
+        "body": json.dumps(content, cls=DecimalEncoder)
     }
 
 # Normalizar curso

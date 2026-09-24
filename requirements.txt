@@ -1,5 +1,3 @@
-﻿boto3==1.40.4
-botocore==1.40.4
 pillow==11.3.0
 qrcode==8.2
 haversine==2.9.0

@@ -29,6 +29,7 @@ functions:
             origin: https://admin.cs2032.com
             headers:
               - Content-Type
+              - x-api-key
             allowCredentials: false
           private: true
       - http:
@@ -43,6 +44,7 @@ functions:
           private: true
     environment:
       INSTRUCTORS_TABLE_NAME: instructors
+      ALLOWED_ORIGIN: https://admin.cs2032.com
 
   course:
     handler: course.handler
@@ -69,6 +71,7 @@ functions:
           private: true
     environment:
       COURSES_TABLE_NAME: courses
+      ALLOWED_ORIGIN: https://admin.cs2032.com
 
   session:
     handler: session.handler
@@ -96,6 +99,7 @@ functions:
     environment:
       SESSIONS_TABLE_NAME: sessions
       FRONT_END_URL: https://attendance.cs2032.com
+      ALLOWED_ORIGIN: https://admin.cs2032.com
 
   attendance:
     handler: attendance.handler
@@ -112,6 +116,7 @@ functions:
           private: true
     environment:
       SESSIONS_TABLE_NAME: sessions
+      ALLOWED_ORIGIN: https://attendance.cs2032.com
 
 resources:
   Resources:
@@ -170,10 +175,10 @@ resources:
               Ref: ApiGatewayRestApi
             Stage: ${sls:stage}
         Throttle:
-          RateLimit: 5
-          BurstLimit: 10
+          RateLimit: 20
+          BurstLimit: 100
         Quota:
-          Limit: 500
+          Limit: 20000
           Period: MONTH
 
     MyUsagePlanKey:
