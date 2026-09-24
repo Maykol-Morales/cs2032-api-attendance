@@ -1,125 +1,90 @@
-# 📡 UTEC Attendance Backend
+# cs2032-api-attendance
 
-Este proyecto implementa un backend serverless en AWS para el sistema de asistencia de la Universidad de Ingeniería y Tecnología (UTEC). Utiliza Python, FastAPI, DynamoDB y API Gateway.
+> Proyecto del curso **CS2032 – Cloud Computing** · UTEC
 
----
+API **serverless** del sistema de asistencia del curso. Gestiona instructores, cursos y sesiones, genera el QR de cada sesión y valida el registro de asistencia de los alumnos (correo UTEC, vigencia de la sesión y ubicación dentro del campus).
 
-## 📦 Requisitos
+La consumen:
 
-- Python 3.13+
-- Node.js 18+
-- [Serverless Framework](https://www.serverless.com/framework/docs/getting-started)
-- Docker (para empaquetar dependencias Python)
-- Cuenta de AWS con IAM Role configurado
+- [cs2032-web-admin](https://github.com/Maykol-Morales/cs2032-web-admin) — panel de instructores · https://admin.cs2032.com
+- [cs2032-web-attendance](https://github.com/Maykol-Morales/cs2032-web-attendance) — registro de asistencia · https://attendance.cs2032.com
 
----
+## Arquitectura
 
-## 🧪 Instalación local
+```
+admin.cs2032.com ──┐                       ┌─ λ instructor ─┐
+                   ├─► API Gateway ────────┼─ λ course ─────┼─► DynamoDB
+attendance.cs2032 ─┘   (API key + plan)    ├─ λ session ────┤   (instructors, courses, sessions)
+                                           └─ λ attendance ─┘
+```
 
-1. **Clona el repositorio**
+- **AWS Lambda** (Python 3.13): una función por recurso
+- **API Gateway**: todos los endpoints son privados (header `x-api-key`), con usage plan (5 req/s, ráfaga de 10, 500 req/mes)
+- **DynamoDB** (on-demand): tablas `instructors`, `courses` y `sessions`
+- **Serverless Framework** + `serverless-python-requirements`
+- `qrcode` + `pillow` para el QR · `haversine` para validar la distancia al campus
+
+## Endpoints
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/instructor` | Registra un instructor (`{ "email": ... }`) |
+| `GET` | `/instructor/all` | Lista instructores |
+| `GET` | `/instructor/{email}` | Verifica si un correo es instructor (`404` si no) |
+| `DELETE` | `/instructor/{email}` | Elimina un instructor |
+| `POST` | `/course` | Crea un curso |
+| `GET` | `/course/all` | Lista cursos |
+| `GET` | `/course/{id}` | Obtiene un curso |
+| `DELETE` | `/course/{id}` | Elimina un curso |
+| `POST` | `/session` | Crea una sesión y devuelve su QR (PNG en base64) |
+| `GET` | `/session/all?course={course_id}` | Lista las sesiones de un curso |
+| `DELETE` | `/session/{id}?course={course_id}` | Elimina una sesión |
+| `POST` | `/attendance` | Registra la asistencia de un alumno |
+
+### Respuestas de `POST /attendance`
+
+| Código | Significado |
+|---|---|
+| `200` | Asistencia registrada |
+| `400` | El correo no es `@utec.edu.pe` |
+| `401` | Sesión no encontrada |
+| `402` | Asistencia ya registrada |
+| `403` | Sesión expirada |
+| `404` | Ubicación fuera del campus (sesiones presenciales, radio de 500 m) |
+
+El QR de cada sesión apunta a `FRONT_END_URL?course={course_id}&session={session_id}`.
+
+## Despliegue
+
+Requisitos: Node.js 18+, Serverless Framework, Docker (para empaquetar dependencias de Python) y credenciales de AWS.
 
 ```bash
-git clone https://github.com/tu-usuario/ServerlessAttendanceBackend.git
-cd ServerlessAttendanceBackend
+npm install          # plugin serverless-python-requirements
+sls deploy           # crea Lambdas, tablas DynamoDB, API Gateway y API key
+sls info --verbose   # muestra la URL base y la API key
+sls remove           # elimina todos los recursos
 ```
 
-2. **Crea y activa el entorno virtual de Python**
+La URL base y la API key son las que usan los frontends en `PUBLIC_BACK_END_URL` y `PUBLIC_BACK_END_KEY`.
 
-```bash
-python -m venv .venv
-source .venv/bin/activate  # En Windows: .venv\Scripts\activate
-```
+Los orígenes CORS (`admin.cs2032.com` y `attendance.cs2032.com`) y la URL del QR (`FRONT_END_URL`) se configuran en `serverless.yml` y en `make_response` de cada handler.
 
-3. **Instala las dependencias de Python**
-
-```bash
-pip install -r requirements.txt
-```
-
-4. **Instala las dependencias de Serverless**
-
-```bash
-npm install
-```
-
----
-
-## 🚀 Despliegue en AWS
-
-1. **Configura tus credenciales de AWS**
-
-```bash
-aws configure
-```
-
-2. **Despliega el backend**
-
-```bash
-sls deploy
-```
-
-Este comando:
-
-- Creará las funciones Lambda.
-- Configurará las tablas DynamoDB.
-- Generará las rutas HTTP en API Gateway.
-
----
-
-## 🧪 Endpoints disponibles
-
-Todos los endpoints están protegidos con API Key.
-
-- `POST /instructor`
-- `GET /instructor/all`
-- `POST /course`
-- `GET /course/all`
-- `POST /session`
-- `GET /session/all?course={course_id}`
-- `DELETE /session/{id}`
-- `POST /attendance`
-
----
-
-## 🌐 CORS
-
-Este backend solo permite solicitudes desde:
-
-- `https://attendance.cs2032.com`
-- `https://admin.cs2032.com`
-
-Los subdominios específicos se configuran en `serverless.yml`.
-
----
-
-## 🧼 Limpieza
-
-Para eliminar todos los recursos creados en AWS:
-
-```bash
-sls remove
-```
-
----
-
-## 🧩 Estructura del proyecto
+## Estructura
 
 ```
-├── attendance.py       # Lambda para marcar asistencia
-├── course.py           # Lambda para registrar cursos
-├── instructor.py       # Lambda para gestionar instructores
-├── session.py          # Lambda para crear sesiones
-├── serverless.yml      # Configuración principal de Serverless Framework
-├── requirements.txt    # Dependencias Python
-├── package.json        # Dependencias de Serverless
-├── .gitignore          # Archivos ignorados por Git
-└── README.md           # Este archivo
+├── instructor.py    # λ instructores
+├── course.py        # λ cursos
+├── session.py       # λ sesiones + generación de QR
+├── attendance.py    # λ registro de asistencia (correo, expiración, ubicación)
+├── serverless.yml   # funciones, rutas, tablas, API key y usage plan
+├── requirements.txt
+└── package.json     # plugin de Serverless
 ```
 
----
+## Autores
 
-## 🧑‍💻 Autor
+Sebastián Urbina y Maykol Morales
 
-Desarrollado por **Sebastián Urbina** y **Maykol Morales**  
-📧 sebastian.urbina@utec.edu.pe
-📧 maykol.morales@utec.edu.pe
+## Licencia
+
+[Apache 2.0](LICENSE)
